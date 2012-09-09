@@ -21,13 +21,7 @@ var selectMIDI = null;
 var midiAccess = null;
 var midiIn = null;
 
-function changeMIDIPort() {
-  var list=midiAccess.enumerateInputs();
-  midiIn = midi.getInput( list[ selectMIDI.selectedIndex ] );
-  midiIn.onmessage = midiMessageReceived;
-}
-
-function selectMIDIIn( ev ) {
+function changeMIDIIn( ev ) {
   var list=midi.enumerateInputs();
   var selectedIndex = ev.target.selectedIndex;
 
@@ -37,31 +31,77 @@ function selectMIDIIn( ev ) {
   }
 }
 
-function onMIDIStarted( midi ) {
-  midiAccess = midi;
+function changeMIDIOut( ev ) {
+  var list=midi.enumerateOutputs();
+  var selectedIndex = ev.target.selectedIndex;
 
-  selectMIDI=document.getElementById("midiIn");
+  if (list.length >= selectedIndex)
+    midiOut = midi.getOutput( list[selectedIndex] );
+}
+
+function onMIDIInit( midi ) {
+  var preferredIndex = 0;
+  midiAccess = midi;
+  selectMIDIIn=document.getElementById("midiIn");
+  selectMIDIOut=document.getElementById("midiOut");
+
   var list=midi.enumerateInputs();
 
   // clear the MIDI input select
-  selectMIDI.options.length = 0;
+  selectMIDIIn.options.length = 0;
+
+  for (var i=0; i<list.length; i++)
+    if (list[i].name.toString().indexOf("DJ") != -1)
+      preferredIndex = i;
 
   if (list.length) {
-    for (var i=0; i<list.length; i++) {
-      selectMIDI.options[i]=new Option(list[i].name,list[i].fingerprint,i==0,i==0);
-    }
-    midiIn = midi.getInput( list[0] );
+    for (var i=0; i<list.length; i++)
+      selectMIDIIn.options[i]=new Option(list[i].name,list[i].fingerprint,i==preferredIndex,i==preferredIndex);
+
+    midiIn = midi.getInput( list[preferredIndex] );
     midiIn.onmessage = midiMessageReceived;
 
-    selectMIDI.onchange = selectMIDIIn;
+    selectMIDIIn.onchange = changeMIDIIn;
+  }
+
+  // clear the MIDI output select
+  selectMIDIOut.options.length = 0;
+  preferredIndex = 0;
+  list=midi.enumerateOutputs();
+
+  for (var i=0; i<list.length; i++)
+    if (list[i].name.toString().indexOf("DJ") != -1)
+      preferredIndex = i;
+
+  if (list.length) {
+    for (var i=0; i<list.length; i++)
+      selectMIDIOut.options[i]=new Option(list[i].name,list[i].fingerprint,i==preferredIndex,i==preferredIndex);
+
+    midiOut = midi.getOutput( list[preferredIndex] );
+    selectMIDIOut.onchange = changeMIDIOut;
+  }
+
+  // Set up LEDs
+  if (midiOut) {
+    midiOut.sendMessage( 0x80,0x3b,0x01 ); // Deck A play/pause
   }
 }
+
+function showBeat(index) {
+  if (midiOut)
+    midiOut.sendMessage( 0x90, 0x3b + index, 0x01 );
+}
+
+function hideBeat(index) {
+  if (midiOut)
+    midiOut.sendMessage( 0x80, 0x3b + index, 0x01 );
+}
+
 
 function onMIDISystemError( msg ) {
   console.log( "Error encountered:" + msg );
 }
 //init: start up MIDI
 window.addEventListener('load', function() {   
-  navigator.getMIDIAccess( onMIDIStarted, onMIDISystemError );
-
+  navigator.getMIDIAccess( onMIDIInit, onMIDISystemError );
 });

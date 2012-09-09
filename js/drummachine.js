@@ -201,11 +201,9 @@ Kit.prototype.loadSample = function(sampleID, url, mixToMono) {
 var impulseResponseInfoList = [
     // Impulse responses - each one represents a unique linear effect.
     {"name":"No Effect", "url":"undefined", "dryMix":1, "wetMix":0},
-    {"name":"Spreader 1", "url":"impulse-responses/spreader50-65ms.wav",        "dryMix":0.8, "wetMix":1.4},
     {"name":"Spreader 2", "url":"impulse-responses/noise-spreader1.wav",        "dryMix":1, "wetMix":1},
     {"name":"Spring Reverb", "url":"impulse-responses/feedback-spring.wav",     "dryMix":1, "wetMix":1},
     {"name":"Space Oddity", "url":"impulse-responses/filter-rhythm3.wav",       "dryMix":1, "wetMix":0.7},
-    {"name":"Reverse", "url":"impulse-responses/spatialized5.wav",              "dryMix":1, "wetMix":1},
     {"name":"Huge Reverse", "url":"impulse-responses/matrix6-backwards.wav",    "dryMix":0, "wetMix":0.7},
     {"name":"Telephone Filter", "url":"impulse-responses/filter-telephone.wav", "dryMix":0, "wetMix":1.2},
     {"name":"Lopass Filter", "url":"impulse-responses/filter-lopass160.wav",    "dryMix":0, "wetMix":0.5},
@@ -219,12 +217,9 @@ var impulseResponseInfoList = [
     {"name":"Dining-Far-Kitchen", "url":"impulse-responses/house-impulses/dining-far-kitchen.wav", "dryMix":1, "wetMix":1},
     {"name":"Medium Hall 1", "url":"impulse-responses/matrix-reverb2.wav",      "dryMix":1, "wetMix":1},
     {"name":"Medium Hall 2", "url":"impulse-responses/matrix-reverb3.wav",      "dryMix":1, "wetMix":1},
-    {"name":"Large Hall", "url":"impulse-responses/spatialized4.wav",           "dryMix":1, "wetMix":0.5},
     {"name":"Peculiar", "url":"impulse-responses/peculiar-backwards.wav",       "dryMix":1, "wetMix":1},
     {"name":"Backslap", "url":"impulse-responses/backslap1.wav",                "dryMix":1, "wetMix":1},
-    {"name":"Warehouse", "url":"impulse-responses/tim-warehouse/cardiod-rear-35-10/cardiod-rear-levelled.wav", "dryMix":1, "wetMix":1},
     {"name":"Diffusor", "url":"impulse-responses/diffusor3.wav",                "dryMix":1, "wetMix":1},
-    {"name":"Binaural Hall", "url":"impulse-responses/bin_dfeq/s2_r4_bd.wav",   "dryMix":1, "wetMix":0.5},
     {"name":"Huge", "url":"impulse-responses/matrix-reverb6.wav",               "dryMix":1, "wetMix":0.7},
 ]
 
@@ -939,6 +934,8 @@ function handleStop(event) {
     var elOld = document.getElementById('LED_' + (rhythmIndex + 14) % 16);
     elOld.src = 'images/LED_off.png';
 
+    hideBeat( (rhythmIndex + 14) % 16 );
+
     rhythmIndex = 0;
 
     document.getElementById('play').classList.remove('playing');
@@ -1086,5 +1083,8 @@ function drawPlayhead(xindex) {
     
     elNew.src = 'images/LED_on.png';
     elOld.src = 'images/LED_off.png';
+
+    showBeat( xindex );
+    hideBeat( lastIndex );
 }
 

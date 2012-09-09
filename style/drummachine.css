@@ -14,10 +14,10 @@ body {
 
 #title {
 	font-family: 'Michroma', 'Droid Sans', Arial, sans-serif;
-	font-size: 25px;
+	font-size: 12px;
 	font-weight: bold;
 	display: block;
-	margin: 20px 0 15px 0;
+	margin: 10px 0 15px 0;
 	text-align: center;
 }
 
@@ -37,6 +37,7 @@ body {
   display: none;
 }
 
+#io { display:block; padding:5px 20px;}
 .container.active {
 	display: block;
 }
