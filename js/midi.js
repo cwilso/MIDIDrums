@@ -40,8 +40,6 @@ function selectMIDIIn( ev ) {
 function onMIDIStarted( midi ) {
   midiAccess = midi;
 
-  document.getElementById("synthbox").className = "loaded";
-
   selectMIDI=document.getElementById("midiIn");
   var list=midi.enumerateInputs();
 
@@ -60,7 +58,6 @@ function onMIDIStarted( midi ) {
 }
 
 function onMIDISystemError( msg ) {
-  document.getElementById("synthbox").className = "error";
   console.log( "Error encountered:" + msg );
 }
 //init: start up MIDI
