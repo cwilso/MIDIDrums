@@ -71,7 +71,7 @@ var mouseCaptureOffset = 0;
 
 var loopLength = 16;
 var rhythmIndex = 0;
-var kMinTempo = 50;
+var kMinTempo = 53;
 var kMaxTempo = 180;
 var noteTime = 0.0;
 
@@ -564,31 +564,31 @@ function schedule() {
         var contextPlayTime = noteTime + startTime;
         
         // Kick
-        if (theBeat.rhythm1[rhythmIndex]) {
+        if (theBeat.rhythm1[rhythmIndex] && instrumentActive[0]) {
             playNote(currentKit.kickBuffer, false, 0,0,-2, 0.5, volumes[theBeat.rhythm1[rhythmIndex]] * 1.0, kickPitch, contextPlayTime);
         }
 
         // Snare
-        if (theBeat.rhythm2[rhythmIndex]) {
+        if (theBeat.rhythm2[rhythmIndex] && instrumentActive[1]) {
             playNote(currentKit.snareBuffer, false, 0,0,-2, 1, volumes[theBeat.rhythm2[rhythmIndex]] * 0.6, snarePitch, contextPlayTime);
         }
 
         // Hihat
-        if (theBeat.rhythm3[rhythmIndex]) {
+        if (theBeat.rhythm3[rhythmIndex] && instrumentActive[2]) {
             // Pan the hihat according to sequence position.
             playNote(currentKit.hihatBuffer, true, 0.5*rhythmIndex - 4, 0, -1.0, 1, volumes[theBeat.rhythm3[rhythmIndex]] * 0.7, hihatPitch, contextPlayTime);
         }
 
         // Toms    
-        if (theBeat.rhythm4[rhythmIndex]) {
+        if (theBeat.rhythm4[rhythmIndex] && instrumentActive[3]) {
             playNote(currentKit.tom1, false, 0,0,-2, 1, volumes[theBeat.rhythm4[rhythmIndex]] * 0.6, tom1Pitch, contextPlayTime);
         }
 
-        if (theBeat.rhythm5[rhythmIndex]) {
+        if (theBeat.rhythm5[rhythmIndex] && instrumentActive[4]) {
             playNote(currentKit.tom2, false, 0,0,-2, 1, volumes[theBeat.rhythm5[rhythmIndex]] * 0.6, tom2Pitch, contextPlayTime);
         }
 
-        if (theBeat.rhythm6[rhythmIndex]) {
+        if (theBeat.rhythm6[rhythmIndex] && instrumentActive[5]) {
             playNote(currentKit.tom3, false, 0,0,-2, 1, volumes[theBeat.rhythm6[rhythmIndex]] * 0.6, tom3Pitch, contextPlayTime);
         }
 
@@ -767,6 +767,9 @@ function handleButtonMouseDown(event) {
     }
 
     notes[rhythmIndex] = (notes[rhythmIndex] + 1) % 3;
+
+    if (instrumentIndex == currentlyActiveInstrument)
+        showCorrectNote( rhythmIndex, notes[rhythmIndex] );
 
     drawNote(notes[rhythmIndex], rhythmIndex, instrumentIndex);
 
@@ -1032,6 +1035,7 @@ function loadBeat(beat) {
     sliderSetValue('swing_thumb', theBeat.swingFactor);
 
     updateControls();
+    setActiveInstrument(0);
 
     return true;
 }
