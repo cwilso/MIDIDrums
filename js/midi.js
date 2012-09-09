@@ -86,8 +86,10 @@ function onMIDIInit( midi ) {
   setActiveInstrument( 0 );
   updateActiveInstruments();
 
+  // light up the play button
   midiOut.sendMessage( 0x90, 3, 32 );
-  midiOut.sendMessage( 0x90, 7, 1 );
+  // turn off the stop button
+  midiOut.sendMessage( 0x80, 7, 1 );
 
 }
 
@@ -253,9 +255,17 @@ function noteOn( noteNumber, velocity) {
         break;
 
       case 3:  // start playback
+        // turn off the play button
+        midiOut.sendMessage( 0x80, 3, 32 );
+        // light up the stop button
+        midiOut.sendMessage( 0x90, 7, 1 );
         handlePlay();
         return;
       case 7:  // stop playback
+        // light up the play button
+        midiOut.sendMessage( 0x90, 3, 32 );
+        // turn off the stop button
+        midiOut.sendMessage( 0x80, 7, 1 );
         handleStop();
         return;
     }
