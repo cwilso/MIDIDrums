@@ -1084,7 +1084,7 @@ function drawPlayhead(xindex) {
     elNew.src = 'images/LED_on.png';
     elOld.src = 'images/LED_off.png';
 
-    showBeat( xindex );
     hideBeat( lastIndex );
+    showBeat( xindex );
 }
 

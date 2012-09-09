@@ -17,26 +17,28 @@ function midiMessageReceived( msgs ) {
   }
 }
 
-var selectMIDI = null;
+var selectMIDIIn = null;
+var selectMIDIOut = null;
 var midiAccess = null;
 var midiIn = null;
+var midiOut = null;
 
 function changeMIDIIn( ev ) {
-  var list=midi.enumerateInputs();
+  var list=midiAccess.enumerateInputs();
   var selectedIndex = ev.target.selectedIndex;
 
   if (list.length >= selectedIndex) {
-    midiIn = midi.getInput( list[selectedIndex] );
+    midiIn = midiAccess.getInput( list[selectedIndex] );
     midiIn.onmessage = midiMessageReceived;
   }
 }
 
 function changeMIDIOut( ev ) {
-  var list=midi.enumerateOutputs();
+  var list=midiAccess.enumerateOutputs();
   var selectedIndex = ev.target.selectedIndex;
 
   if (list.length >= selectedIndex)
-    midiOut = midi.getOutput( list[selectedIndex] );
+    midiOut = midiAccess.getOutput( list[selectedIndex] );
 }
 
 function onMIDIInit( midi ) {
@@ -58,7 +60,7 @@ function onMIDIInit( midi ) {
     for (var i=0; i<list.length; i++)
       selectMIDIIn.options[i]=new Option(list[i].name,list[i].fingerprint,i==preferredIndex,i==preferredIndex);
 
-    midiIn = midi.getInput( list[preferredIndex] );
+    midiIn = midiAccess.getInput( list[preferredIndex] );
     midiIn.onmessage = midiMessageReceived;
 
     selectMIDIIn.onchange = changeMIDIIn;
@@ -77,24 +79,20 @@ function onMIDIInit( midi ) {
     for (var i=0; i<list.length; i++)
       selectMIDIOut.options[i]=new Option(list[i].name,list[i].fingerprint,i==preferredIndex,i==preferredIndex);
 
-    midiOut = midi.getOutput( list[preferredIndex] );
+    midiOut = midiAccess.getOutput( list[preferredIndex] );
     selectMIDIOut.onchange = changeMIDIOut;
   }
 
-  // Set up LEDs
-  if (midiOut) {
-    midiOut.sendMessage( 0x80,0x3b,0x01 ); // Deck A play/pause
-  }
 }
 
 function showBeat(index) {
   if (midiOut)
-    midiOut.sendMessage( 0x90, 0x3b + index, 0x01 );
+    midiOut.sendMessage( 0x90, 16 + index, ((index%4)==0) ? 0x03 : 0x07);
 }
 
 function hideBeat(index) {
   if (midiOut)
-    midiOut.sendMessage( 0x80, 0x3b + index, 0x01 );
+    midiOut.sendMessage( 0x80, 16 + index, 0x00 );
 }
 
 
@@ -105,3 +103,13 @@ function onMIDISystemError( msg ) {
 window.addEventListener('load', function() {   
   navigator.getMIDIAccess( onMIDIInit, onMIDISystemError );
 });
+
+var currentlyActiveInstrument = 0;
+
+function setActiveInstrument(index) {
+
+}
+
+function toggleBeat(index) {
+  
+}
