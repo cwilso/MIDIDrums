@@ -8,6 +8,7 @@ var convolver;
 var compressor;
 var masterGainNode;
 var effectLevelNode;
+var filterNode;
 
 // Each effect impulse response has a specific overall desired dry and wet volume.
 // For example in the telephone filter, it's necessary to make the dry volume 0 to correctly hear the effect.
@@ -388,10 +389,17 @@ function init() {
         finalMixNode = context.destination;
     }
 
+    // create master filter node
+    filterNode = context.createBiquadFilter();
+    filterNode.type = filterNode.LOWPASS;
+    filterNode.frequency.value = 0.5 * context.sampleRate;
+    filterNode.Q.value = 1;
+    filterNode.connect(finalMixNode);
+    
     // Create master volume.
     masterGainNode = context.createGainNode();
     masterGainNode.gain.value = 0.7; // reduce overall volume to avoid clipping
-    masterGainNode.connect(finalMixNode);
+    masterGainNode.connect(filterNode);
 
     // Create effect volume.
     effectLevelNode = context.createGainNode();
@@ -929,6 +937,12 @@ function handlePlay(event) {
 
     document.getElementById('play').classList.add('playing');
     document.getElementById('stop').classList.add('playing');
+    if (midiOut) {
+        // turn off the play button
+        midiOut.sendMessage( 0x80, 3, 32 );
+        // light up the stop button
+        midiOut.sendMessage( 0x90, 7, 1 );        
+    }
 }
 
 function handleStop(event) {
@@ -943,6 +957,12 @@ function handleStop(event) {
 
     document.getElementById('play').classList.remove('playing');
     document.getElementById('stop').classList.remove('playing');
+    if (midiOut) {
+        // light up the play button
+        midiOut.sendMessage( 0x90, 3, 32 );
+        // turn off the stop button
+        midiOut.sendMessage( 0x80, 7, 1 );
+    }
 }
 
 function handleSave(event) {
@@ -1092,3 +1112,23 @@ function drawPlayhead(xindex) {
     showBeat( xindex );
 }
 
+function filterFrequencyFromCutoff( cutoff ) {
+    var nyquist = 0.5 * context.sampleRate;
+
+    // spreads over a ~ten-octave range, from 20Hz - 20kHz.
+    var filterFrequency = Math.pow(2, (11 * cutoff)) * 40;
+
+    if (filterFrequency > nyquist)
+        filterFrequency = nyquist;
+    return filterFrequency;
+}
+
+function setFilterCutoff( cutoff ) {
+    if (filterNode)
+        filterNode.frequency.value = filterFrequencyFromCutoff( cutoff );
+}
+
+function setFilterQ( Q ) {
+    if (filterNode)
+        filterNode.Q.value = Q;
+}

@@ -53,7 +53,7 @@ function onMIDIInit( midi ) {
   selectMIDIIn.options.length = 0;
 
   for (var i=0; i<list.length; i++)
-    if (list[i].name.toString().indexOf("DJ") != -1)
+    if (list[i].name.toString().indexOf("Controls") != -1)
       preferredIndex = i;
 
   if (list.length) {
@@ -72,7 +72,7 @@ function onMIDIInit( midi ) {
   list=midi.enumerateOutputs();
 
   for (var i=0; i<list.length; i++)
-    if (list[i].name.toString().indexOf("DJ") != -1)
+    if (list[i].name.toString().indexOf("Controls") != -1)
       preferredIndex = i;
 
   if (list.length) {
@@ -255,17 +255,9 @@ function noteOn( noteNumber, velocity) {
         break;
 
       case 3:  // start playback
-        // turn off the play button
-        midiOut.sendMessage( 0x80, 3, 32 );
-        // light up the stop button
-        midiOut.sendMessage( 0x90, 7, 1 );
         handlePlay();
         return;
       case 7:  // stop playback
-        // light up the play button
-        midiOut.sendMessage( 0x90, 3, 32 );
-        // turn off the stop button
-        midiOut.sendMessage( 0x80, 7, 1 );
         handleStop();
         return;
     }
@@ -276,6 +268,8 @@ function noteOn( noteNumber, velocity) {
 function noteOff( noteNumber ) {
 
 }
+
+var filterEngaged = false;
 
 function controller(number, data) {
   switch (number) {
@@ -310,6 +304,21 @@ function controller(number, data) {
     case 32:  // Tom3 pitch
       sliderSetValue( 'tom3_thumb', data/127);
       updateControls();
+      return;
+
+    case 48:  // Filter cutoff
+      if ( !filterEngaged && data<127)
+        return;
+      filterEngaged = true;
+      setFilterCutoff( data/127.0 );
+      // echo back out - this lights up the control
+//      midiOut.sendMessage( 11, 48, data );
+      return;
+
+    case 51:  // Filter Q
+      setFilterQ( data * 20.0/127.0 );
+      // echo back out - this lights up the control
+//      midiOut.sendMessage( 11, 48, data );
       return;
 
   }
