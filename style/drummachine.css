@@ -298,3 +298,4 @@ body {
 }
 
 img.preload { display: none; }
+#MIDIPlugin { visibility: hidden; }
