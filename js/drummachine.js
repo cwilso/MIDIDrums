@@ -613,6 +613,32 @@ function schedule() {
     timeoutId = setTimeout("schedule()", 0);
 }
 
+function playDrum(noteNumber, velocity) {
+    switch (noteNumber) {
+        case 0x24:
+            playNote(currentKit.kickBuffer,  false, 0,0,-2,  0.5, (velocity / 127), kickPitch,  0);
+            break;
+        case 0x26:
+            playNote(currentKit.snareBuffer, false, 0,0,-2,  1,   (velocity / 127), snarePitch, 0);
+            break;
+        case 0x28:
+            playNote(currentKit.hihatBuffer, true,  0,0,-1.0,1,   (velocity / 127), hihatPitch, 0);
+            break;
+        case 0x2d:
+            playNote(currentKit.tom1,        false, 0,0,-2,  1,   (velocity / 127), tom1Pitch,  0);
+            break;
+        case 0x2f:
+            playNote(currentKit.tom2,        false, 0,0,-2,  1,   (velocity / 127), tom2Pitch,  0);
+            break;
+        case 0x32:
+            playNote(currentKit.tom3,        false, 0,0,-2,  1,   (velocity / 127), tom3Pitch,  0);
+            break;
+        default:
+            console.log("note:0x" + noteNumber.toString(16) );
+    }
+}
+
+
 function tempoIncrease() {
     theBeat.tempo = Math.min(kMaxTempo, theBeat.tempo+4);
     document.getElementById('tempo').innerHTML = theBeat.tempo;
@@ -939,9 +965,9 @@ function handlePlay(event) {
     document.getElementById('stop').classList.add('playing');
     if (midiOut) {
         // turn off the play button
-        midiOut.sendMessage( 0x80, 3, 32 );
+        midiOut.send( [0x80, 3, 32] );
         // light up the stop button
-        midiOut.sendMessage( 0x90, 7, 1 );        
+        midiOut.send( [0x90, 7, 1] );        
     }
 }
 
@@ -959,9 +985,9 @@ function handleStop(event) {
     document.getElementById('stop').classList.remove('playing');
     if (midiOut) {
         // light up the play button
-        midiOut.sendMessage( 0x90, 3, 32 );
+        midiOut.send( [0x90, 3, 32] );
         // turn off the stop button
-        midiOut.sendMessage( 0x80, 7, 1 );
+        midiOut.send( [0x80, 7, 1] );
     }
 }
 

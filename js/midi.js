@@ -1,20 +1,39 @@
-function midiMessageReceived( msgs ) {
-  for (i=0; i<msgs.length; i++) {
-    var cmd = msgs[i].data[0] >> 4;
-    var channel = msgs[i].data[0] & 0xf;
-    var noteNumber = msgs[i].data[1];
-    var velocity = msgs[i].data[2];
+function midiMessageReceived( ev ) {
+    var cmd = ev.data[0] >> 4;
+    var channel = ev.data[0] & 0xf;
+    var noteNumber = ev.data[1];
+    var velocity = 0;
+    if (ev.data.length > 2)
+      velocity = ev.data[2];
 
     if ( cmd==8 || ((cmd==9)&&(velocity==0)) ) { // with MIDI, note on with velocity zero is the same as note off
       // note off
-      noteOff( noteNumber );
+      if (channel!=9)
+        noteOff( noteNumber );
     } else if (cmd == 9) {
       // note on
-      noteOn( noteNumber, velocity);
+      if (channel == 9)
+        playDrum(noteNumber, velocity);
+      else
+        noteOn( noteNumber, velocity);
     } else if (cmd == 11) {
       controller( noteNumber, velocity);
-    }   
-  }
+    } else if ((ev.data.length == 6) &&
+      (ev.data[0] == 0xf0) &&
+      (ev.data[1] == 0x7f) &&
+      (ev.data[3] == 0x06) &&
+      (ev.data[5] == 0xf7) ) { // MIDI Machine Control (MMC) message
+      switch (ev.data[4]) {
+        case 0x01: // stop
+          handleStop();
+          break;
+        case 0x02: // start
+          handlePlay();
+          break;
+      }
+    } else {
+      console.log("unrecognized message");
+    }
 }
 
 var selectMIDIIn = null;
@@ -24,7 +43,7 @@ var midiIn = null;
 var midiOut = null;
 
 function changeMIDIIn( ev ) {
-  var list=midiAccess.enumerateInputs();
+  var list=midiAccess.getInputs();
   var selectedIndex = ev.target.selectedIndex;
 
   if (list.length >= selectedIndex) {
@@ -34,11 +53,11 @@ function changeMIDIIn( ev ) {
 }
 
 function changeMIDIOut( ev ) {
-  var list=midiAccess.enumerateOutputs();
+  var list=midiAccess.getOutputs();
   var selectedIndex = ev.target.selectedIndex;
 
-  if (list.length >= selectedIndex)
-    midiOut = midiAccess.getOutput( list[selectedIndex] );
+//  if (list.length >= selectedIndex)
+//    midiOut = midiAccess.getOutput( list[selectedIndex] );
 }
 
 function onMIDIInit( midi ) {
@@ -47,7 +66,7 @@ function onMIDIInit( midi ) {
   selectMIDIIn=document.getElementById("midiIn");
   selectMIDIOut=document.getElementById("midiOut");
 
-  var list=midi.enumerateInputs();
+  var list=midi.getInputs();
 
   // clear the MIDI input select
   selectMIDIIn.options.length = 0;
@@ -69,7 +88,7 @@ function onMIDIInit( midi ) {
   // clear the MIDI output select
   selectMIDIOut.options.length = 0;
   preferredIndex = 0;
-  list=midi.enumerateOutputs();
+  list=midi.getOutputs();
 
   for (var i=0; i<list.length; i++)
     if (list[i].name.toString().indexOf("Controls") != -1)
@@ -79,7 +98,7 @@ function onMIDIInit( midi ) {
     for (var i=0; i<list.length; i++)
       selectMIDIOut.options[i]=new Option(list[i].name,list[i].fingerprint,i==preferredIndex,i==preferredIndex);
 
-    midiOut = midiAccess.getOutput( list[preferredIndex] );
+//    midiOut = midiAccess.getOutput( list[preferredIndex] );
     selectMIDIOut.onchange = changeMIDIOut;
   }
   
@@ -87,20 +106,20 @@ function onMIDIInit( midi ) {
   updateActiveInstruments();
 
   // light up the play button
-  midiOut.sendMessage( 0x90, 3, 32 );
+//  midiOut.send( [0x90, 3, 32] );
   // turn off the stop button
-  midiOut.sendMessage( 0x80, 7, 1 );
+//  midiOut.send( [0x80, 7, 1] );
 
 }
 
 function showBeat(index) {
   if (midiOut)
-    midiOut.sendMessage( 0x90, 16 + index, ((index%4)==0) ? 0x03 : 0x07);
+    midiOut.send( [0x90, 16 + index, ((index%4)==0) ? 0x03 : 0x07]);
 }
 
 function hideBeat(index) {
   if (midiOut)
-    midiOut.sendMessage( 0x80, 16 + index, 0x00 );
+    midiOut.send( [0x80, 16 + index, 0x00] );
 }
 
 
@@ -109,7 +128,7 @@ function onMIDISystemError( msg ) {
 }
 //init: start up MIDI
 window.addEventListener('load', function() {   
-  navigator.getMIDIAccess( onMIDIInit, onMIDISystemError );
+  navigator.requestMIDIAccess( onMIDIInit, onMIDISystemError );
 });
 
 var currentlyActiveInstrument = 0;
@@ -134,23 +153,27 @@ function colorForIntrument(index) {
 var instrumentActive = [true,true,true,true,true,true];
 
 function updateActiveInstruments() {
+  if (!midiOut)
+    return;
+
   for (var i=0;i<6; i++)
     if (instrumentActive[i])
-      midiOut.sendMessage( 0x90, keyForInstrument(i)+8, colorForIntrument(i) );
+      midiOut.send( [0x90, keyForInstrument(i)+8, colorForIntrument(i)] );
     else
-      midiOut.sendMessage( 0x80, keyForInstrument(i)+8, 0x00 );
+      midiOut.send( [0x80, keyForInstrument(i)+8, 0x00] );
  }
 
 function setActiveInstrument(index) {
-  if (!midiOut) return;
+  if (!midiOut)
+    return;
 
   //turn off the last lit-up instrument
-  midiOut.sendMessage( 0x80, keyForInstrument(currentlyActiveInstrument), 0x00 );
+  midiOut.send( [0x80, keyForInstrument(currentlyActiveInstrument), 0x00] );
 
   currentlyActiveInstrument = index;
 
   // turn on the new instrument button
-  midiOut.sendMessage( 0x90, keyForInstrument(index), colorForIntrument(index) );
+  midiOut.send( [0x90, keyForInstrument(index), colorForIntrument(index)] );
 
   var notes = theBeat.rhythm1;
 
@@ -173,7 +196,7 @@ function showCorrectNote( index, note ) {
   // note==2 -> loud hit
 
   if (midiOut)
-    midiOut.sendMessage( 0x90, 32 + index, note * 32 );
+    midiOut.send( [0x90, 32 + index, note * 32] );
 }
 
 function toggleBeat(rhythmIndex) {
@@ -312,13 +335,13 @@ function controller(number, data) {
       filterEngaged = true;
       setFilterCutoff( data/127.0 );
       // echo back out - this lights up the control
-//      midiOut.sendMessage( 11, 48, data );
+//      midiOut.send( [11, 48, data] );
       return;
 
     case 51:  // Filter Q
       setFilterQ( data * 20.0/127.0 );
       // echo back out - this lights up the control
-//      midiOut.sendMessage( 11, 48, data );
+//      midiOut.send( [11, 48, data] );
       return;
 
   }
