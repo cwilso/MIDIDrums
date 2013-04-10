@@ -43,13 +43,14 @@ var midiIn = null;
 var midiOut = null;
 
 function changeMIDIIn( ev ) {
-  var list=midiAccess.getInputs();
+/*  var list=midiAccess.getInputs();
   var selectedIndex = ev.target.selectedIndex;
 
   if (list.length >= selectedIndex) {
     midiIn = midiAccess.getInput( list[selectedIndex] );
     midiIn.onmessage = midiMessageReceived;
   }
+*/
 }
 
 function changeMIDIOut( ev ) {
@@ -59,6 +60,8 @@ function changeMIDIOut( ev ) {
 //  if (list.length >= selectedIndex)
 //    midiOut = midiAccess.getOutput( list[selectedIndex] );
 }
+
+var midiIns = [];
 
 function onMIDIInit( midi ) {
   var preferredIndex = 0;
@@ -76,12 +79,12 @@ function onMIDIInit( midi ) {
       preferredIndex = i;
 
   if (list.length) {
-    for (var i=0; i<list.length; i++)
+    for (var i=0; i<list.length; i++) {
       selectMIDIIn.options[i]=new Option(list[i].name,list[i].fingerprint,i==preferredIndex,i==preferredIndex);
-
-    midiIn = midiAccess.getInput( list[preferredIndex] );
-    midiIn.onmessage = midiMessageReceived;
-
+      midiIn = midiAccess.getInput( list[i] );
+      midiIns.push(midiIn);
+      midiIn.onmessage = midiMessageReceived;
+    }
     selectMIDIIn.onchange = changeMIDIIn;
   }
 
@@ -98,7 +101,7 @@ function onMIDIInit( midi ) {
     for (var i=0; i<list.length; i++)
       selectMIDIOut.options[i]=new Option(list[i].name,list[i].fingerprint,i==preferredIndex,i==preferredIndex);
 
-//    midiOut = midiAccess.getOutput( list[preferredIndex] );
+    midiOut = midiAccess.getOutput( list[preferredIndex] );
     selectMIDIOut.onchange = changeMIDIOut;
   }
   
@@ -106,9 +109,9 @@ function onMIDIInit( midi ) {
   updateActiveInstruments();
 
   // light up the play button
-//  midiOut.send( [0x90, 3, 32] );
+  midiOut.send( [0x90, 3, 32] );
   // turn off the stop button
-//  midiOut.send( [0x80, 7, 1] );
+  midiOut.send( [0x80, 7, 1] );
 
 }
 
@@ -335,13 +338,13 @@ function controller(number, data) {
       filterEngaged = true;
       setFilterCutoff( data/127.0 );
       // echo back out - this lights up the control
-//      midiOut.send( [11, 48, data] );
+      midiOut.send( [11, 48, data] );
       return;
 
     case 51:  // Filter Q
       setFilterQ( data * 20.0/127.0 );
       // echo back out - this lights up the control
-//      midiOut.send( [11, 48, data] );
+      midiOut.send( [11, 48, data] );
       return;
 
   }
