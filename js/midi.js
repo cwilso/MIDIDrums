@@ -41,6 +41,7 @@ var selectMIDIOut = null;
 var midiAccess = null;
 var midiIn = null;
 var midiOut = null;
+var outputIsLivid = false;
 
 function changeMIDIIn( ev ) {
 /*  var list=midiAccess.getInputs();
@@ -94,8 +95,10 @@ function onMIDIInit( midi ) {
   list=midi.getOutputs();
 
   for (var i=0; i<list.length; i++)
-    if (list[i].name.toString().indexOf("Controls") != -1)
+    if (list[i].name.toString().indexOf("Controls") != -1) {
       preferredIndex = i;
+      outputIsLivid = true;
+    }
 
   if (list.length) {
     for (var i=0; i<list.length; i++)
@@ -108,20 +111,21 @@ function onMIDIInit( midi ) {
   setActiveInstrument( 0 );
   updateActiveInstruments();
 
-  // light up the play button
-  midiOut.send( [0x90, 3, 32] );
-  // turn off the stop button
-  midiOut.send( [0x80, 7, 1] );
-
+  if (outputIsLivid) {
+    // light up the play button
+    midiOut.send( [0x90, 3, 32] );
+    // turn off the stop button
+    midiOut.send( [0x80, 7, 1] );
+  }
 }
 
 function showBeat(index) {
-  if (midiOut)
+  if (midiOut && outputIsLivid)
     midiOut.send( [0x90, 16 + index, ((index%4)==0) ? 0x03 : 0x07]);
 }
 
 function hideBeat(index) {
-  if (midiOut)
+  if (midiOut && outputIsLivid)
     midiOut.send( [0x80, 16 + index, 0x00] );
 }
 
@@ -156,7 +160,7 @@ function colorForIntrument(index) {
 var instrumentActive = [true,true,true,true,true,true];
 
 function updateActiveInstruments() {
-  if (!midiOut)
+  if (!midiOut || !(outputIsLivid))
     return;
 
   for (var i=0;i<6; i++)
@@ -167,16 +171,15 @@ function updateActiveInstruments() {
  }
 
 function setActiveInstrument(index) {
-  if (!midiOut)
-    return;
-
   //turn off the last lit-up instrument
-  midiOut.send( [0x80, keyForInstrument(currentlyActiveInstrument), 0x00] );
+  if (midiOut&&outputIsLivid)
+    midiOut.send( [0x80, keyForInstrument(currentlyActiveInstrument), 0x00] );
 
   currentlyActiveInstrument = index;
 
   // turn on the new instrument button
-  midiOut.send( [0x90, keyForInstrument(index), colorForIntrument(index)] );
+  if (midiOut&&outputIsLivid)
+    midiOut.send( [0x90, keyForInstrument(index), colorForIntrument(index)] );
 
   var notes = theBeat.rhythm1;
 
@@ -198,7 +201,7 @@ function showCorrectNote( index, note ) {
   // note==1 -> light hit
   // note==2 -> loud hit
 
-  if (midiOut)
+  if (midiOut && outputIsLivid)
     midiOut.send( [0x90, 32 + index, note * 32] );
 }
 
@@ -338,13 +341,15 @@ function controller(number, data) {
       filterEngaged = true;
       setFilterCutoff( data/127.0 );
       // echo back out - this lights up the control
-      midiOut.send( [11, 48, data] );
+      if (midiOut&&outputIsLivid)
+        midiOut.send( [11, 48, data] );
       return;
 
     case 51:  // Filter Q
       setFilterQ( data * 20.0/127.0 );
       // echo back out - this lights up the control
-      midiOut.send( [11, 48, data] );
+      if (midiOut&&outputIsLivid)
+        midiOut.send( [11, 48, data] );
       return;
 
   }
