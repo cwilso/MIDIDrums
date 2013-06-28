@@ -55,7 +55,7 @@ function changeMIDIIn( ev ) {
 }
 
 function changeMIDIOut( ev ) {
-  var list=midiAccess.getOutputs();
+  var list=midiAccess.outputs();
   var selectedIndex = ev.target.selectedIndex;
 
 //  if (list.length >= selectedIndex)
@@ -70,7 +70,7 @@ function onMIDIInit( midi ) {
   selectMIDIIn=document.getElementById("midiIn");
   selectMIDIOut=document.getElementById("midiOut");
 
-  var list=midi.getInputs();
+  var list=midi.inputs();
 
   // clear the MIDI input select
   selectMIDIIn.options.length = 0;
@@ -82,9 +82,9 @@ function onMIDIInit( midi ) {
   if (list.length) {
     for (var i=0; i<list.length; i++) {
       selectMIDIIn.options[i]=new Option(list[i].name,list[i].fingerprint,i==preferredIndex,i==preferredIndex);
-      midiIn = midiAccess.getInput( list[i] );
+      midiIn = list[ i ];
       midiIns.push(midiIn);
-      midiIn.onmessage = midiMessageReceived;
+      midiIn.onmidimessage = midiMessageReceived;
     }
     selectMIDIIn.onchange = changeMIDIIn;
   }
@@ -92,7 +92,7 @@ function onMIDIInit( midi ) {
   // clear the MIDI output select
   selectMIDIOut.options.length = 0;
   preferredIndex = 0;
-  list=midi.getOutputs();
+  list=midi.outputs();
 
   for (var i=0; i<list.length; i++)
     if (list[i].name.toString().indexOf("Controls") != -1) {
@@ -104,7 +104,7 @@ function onMIDIInit( midi ) {
     for (var i=0; i<list.length; i++)
       selectMIDIOut.options[i]=new Option(list[i].name,list[i].fingerprint,i==preferredIndex,i==preferredIndex);
 
-    midiOut = midiAccess.getOutput( list[preferredIndex] );
+    midiOut = list[ preferredIndex ];
     selectMIDIOut.onchange = changeMIDIOut;
   }
   
@@ -135,7 +135,7 @@ function onMIDISystemError( msg ) {
 }
 //init: start up MIDI
 window.addEventListener('load', function() {   
-  navigator.requestMIDIAccess( onMIDIInit, onMIDISystemError );
+  navigator.requestMIDIAccess().then( onMIDIInit, onMIDISystemError );
 });
 
 var currentlyActiveInstrument = 0;
