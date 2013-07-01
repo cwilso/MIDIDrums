@@ -376,7 +376,9 @@ function init() {
         
     startLoadingAssets();
 
-    context = new webkitAudioContext();
+    // NOTE: THIS NOW RELIES ON THE MONKEYPATCH LIBRARY TO LOAD
+    // IN CHROME AND SAFARI (until they release unprefixed)
+    context = new AudioContext();
 
     var finalMixNode;
     if (context.createDynamicsCompressor) {
@@ -397,12 +399,12 @@ function init() {
     filterNode.connect(finalMixNode);
     
     // Create master volume.
-    masterGainNode = context.createGainNode();
+    masterGainNode = context.createGain();
     masterGainNode.gain.value = 0.7; // reduce overall volume to avoid clipping
     masterGainNode.connect(filterNode);
 
     // Create effect volume.
-    effectLevelNode = context.createGainNode();
+    effectLevelNode = context.createGain();
     effectLevelNode.gain.value = 1.0; // effect level slider controls this
     effectLevelNode.connect(masterGainNode);
 
@@ -547,18 +549,18 @@ function playNote(buffer, pan, x, y, z, sendGain, mainGain, playbackRate, noteTi
     }
 
     // Connect to dry mix
-    var dryGainNode = context.createGainNode();
+    var dryGainNode = context.createGain();
     dryGainNode.gain.value = mainGain * effectDryMix;
     finalNode.connect(dryGainNode);
     dryGainNode.connect(masterGainNode);
 
     // Connect to wet mix
-    var wetGainNode = context.createGainNode();
+    var wetGainNode = context.createGain();
     wetGainNode.gain.value = sendGain;
     finalNode.connect(wetGainNode);
     wetGainNode.connect(convolver);
 
-    voice.noteOn(noteTime);
+    voice.start(noteTime);
 }
 
 function schedule() {
