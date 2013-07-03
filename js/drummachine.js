@@ -166,6 +166,14 @@ Kit.prototype.load = function() {
     this.loadSample(5, tom3Path, false);
 }
 
+var decodedFunctions = [
+function (buffer) { this.kickBuffer = buffer; },
+function (buffer) { this.snareBuffer = buffer; },
+function (buffer) { this.hihatBuffer = buffer; },
+function (buffer) { this.tom1 = buffer; },
+function (buffer) { this.tom2 = buffer; },
+function (buffer) { this.tom3 = buffer; } ];
+
 Kit.prototype.loadSample = function(sampleID, url, mixToMono) {
     // Load asynchronously
 
@@ -176,15 +184,7 @@ Kit.prototype.loadSample = function(sampleID, url, mixToMono) {
     var kit = this;
 
     request.onload = function() {
-        var buffer = context.createBuffer(request.response, mixToMono);
-        switch (sampleID) {
-            case 0: kit.kickBuffer = buffer; break;
-            case 1: kit.snareBuffer = buffer; break;
-            case 2: kit.hihatBuffer = buffer; break;
-            case 3: kit.tom1 = buffer; break;
-            case 4: kit.tom2 = buffer; break;
-            case 5: kit.tom3 = buffer; break;
-        }
+        context.decodeAudioData(request.response, decodedFunctions[sampleID].bind(kit));
 
         kit.instrumentLoadCount++;
         if (kit.instrumentLoadCount == kit.instrumentCount) {
@@ -244,6 +244,15 @@ ImpulseResponse.prototype.isLoaded = function() {
     return this.isLoaded_;
 }
 
+function loadedImpulseResponse(buffer) {
+    this.buffer = buffer;
+    this.isLoaded_ = true;
+    
+    if (this.demoIndex != -1) {
+        beatDemo[this.demoIndex].setEffectLoaded();
+    }
+}
+
 ImpulseResponse.prototype.load = function() {
     if (this.startedLoading) {
         return;
@@ -260,12 +269,7 @@ ImpulseResponse.prototype.load = function() {
     var asset = this;
 
     request.onload = function() {
-        asset.buffer = context.createBuffer(request.response, false);
-        asset.isLoaded_ = true;
-        
-        if (asset.demoIndex != -1) {
-            beatDemo[asset.demoIndex].setEffectLoaded();
-        }
+        context.decodeAudioData(request.response, loadedImpulseResponse.bind(asset) );
     }
 
     request.send();
@@ -540,7 +544,7 @@ function playNote(buffer, pan, x, y, z, sendGain, mainGain, playbackRate, noteTi
     var finalNode;
     if (pan) {
         var panner = context.createPanner();
-        panner.panningModel = webkitAudioPannerNode.HRTF;
+        panner.panningModel = "HRTF";
         panner.setPosition(x, y, z);
         voice.connect(panner);
         finalNode = panner;
