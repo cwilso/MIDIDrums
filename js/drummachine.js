@@ -3,6 +3,7 @@
 // init() once the page has finished loading.
 window.onload = init;
 
+var timerWorker = null; // Worker thread to send us scheduling messages.
 var context;
 var convolver;
 var compressor;
@@ -397,7 +398,7 @@ function init() {
 
     // create master filter node
     filterNode = context.createBiquadFilter();
-    filterNode.type = filterNode.LOWPASS;
+    filterNode.type = "lowpass";
     filterNode.frequency.value = 0.5 * context.sampleRate;
     filterNode.Q.value = 1;
     filterNode.connect(finalMixNode);
@@ -427,6 +428,19 @@ function init() {
 
     initControls();
     updateControls();
+
+    var timerWorkerBlob = new Blob([
+        "var timeoutID=0;function schedule(){timeoutID=setTimeout(function(){postMessage('schedule'); schedule();},100);} onmessage = function(e) { if (e.data == 'start') { if (!timeoutID) schedule();} else if (e.data == 'stop') {if (timeoutID) clearTimeout(timeoutID); timeoutID=0;};}"]);
+
+    // Obtain a blob URL reference to our worker 'file'.
+    var timerWorkerBlobURL = window.URL.createObjectURL(timerWorkerBlob);
+
+    timerWorker = new Worker(timerWorkerBlobURL);
+    timerWorker.onmessage = function(e) {
+      schedule();
+    };
+    timerWorker.postMessage('init'); // Start the worker.
+
 }
 
 function initControls() {
@@ -573,7 +587,7 @@ function schedule() {
     // The sequence starts at startTime, so normalize currentTime so that it's 0 at the start of the sequence.
     currentTime -= startTime;
 
-    while (noteTime < currentTime + 0.200) {
+    while (noteTime < currentTime + 0.120) {
         // Convert noteTime to context time.
         var contextPlayTime = noteTime + startTime;
         
@@ -615,8 +629,6 @@ function schedule() {
 
         advanceNote();
     }
-
-    timeoutId = setTimeout("schedule()", 0);
 }
 
 function playDrum(noteNumber, velocity) {
@@ -966,6 +978,7 @@ function handlePlay(event) {
     noteTime = 0.0;
     startTime = context.currentTime + 0.005;
     schedule();
+    timerWorker.postMessage("start");
 
     document.getElementById('play').classList.add('playing');
     document.getElementById('stop').classList.add('playing');
@@ -978,7 +991,7 @@ function handlePlay(event) {
 }
 
 function handleStop(event) {
-    clearTimeout(timeoutId);
+    timerWorker.postMessage("stop");
 
     var elOld = document.getElementById('LED_' + (rhythmIndex + 14) % 16);
     elOld.src = 'images/LED_off.png';

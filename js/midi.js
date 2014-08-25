@@ -342,14 +342,14 @@ function controller(number, data) {
       setFilterCutoff( data/127.0 );
       // echo back out - this lights up the control
       if (midiOut&&outputIsLivid)
-        midiOut.send( [11, 48, data] );
+        midiOut.send( [11<<4, 48, data] );
       return;
 
     case 51:  // Filter Q
       setFilterQ( data * 20.0/127.0 );
       // echo back out - this lights up the control
       if (midiOut&&outputIsLivid)
-        midiOut.send( [11, 48, data] );
+        midiOut.send( [11<<4, 48, data] );
       return;
 
   }
