@@ -60,25 +60,29 @@ var midiOut = null;
 var outputIsLivid = false;
 
 function changeMIDIIn( ev ) {
-/*  var list=midiAccess.getInputs();
-  var selectedIndex = ev.target.selectedIndex;
+  if (midiIn)
+    midiIn.onmidimessage = null;
+  var selectedID = ev.target[ev.target.selectedIndex].value;
 
-  if (list.length >= selectedIndex) {
-    midiIn = midiAccess.getInput( list[selectedIndex] );
-    midiIn.onmessage = midiMessageReceived;
+  for (var input of midiAccess.inputs.values()) {
+    if (selectedID == input.id) {
+      midiIn = input;
+      midiIn.onmidimessage = midiMessageReceived;
+      return;
+    }
   }
-*/
 }
 
 function changeMIDIOut( ev ) {
-  var list=midiAccess.outputs();
-  var selectedIndex = ev.target.selectedIndex;
+  var selectedID = ev.target[ev.target.selectedIndex].value;
 
-//  if (list.length >= selectedIndex)
-//    midiOut = midiAccess.getOutput( list[selectedIndex] );
+  for (var output of midiAccess.inputs.values()) {
+    if (selectedID == output.id) {
+      midiOut = output;
+      return;
+    }
+  }
 }
-
-var midiIns = [];
 
 function onMIDIInit( midi ) {
   var preferredIndex = 0;
@@ -101,7 +105,6 @@ function onMIDIInit( midi ) {
   for (var input of midiAccess.inputs.values()) {
       selectMIDIIn.options[i]=new Option(input.name,input.fingerprint,i==preferredIndex,i==preferredIndex);
       midiIn = input;
-      midiIns.push(midiIn);
       midiIn.onmidimessage = (i==preferredIndex)?midiMessageReceived:nonControllrMidiMessageReceived;
       i++;
   }
@@ -118,7 +121,7 @@ function onMIDIInit( midi ) {
       outputIsLivid = true;
       midiOut = output;
     }
-    selectMIDIOut.options[i]=new Option(list[i].name,list[i].fingerprint,i==preferredIndex,i==preferredIndex);
+    selectMIDIOut.options[i]=new Option(output.name,output.fingerprint,i==preferredIndex,i==preferredIndex);
     i++;
   }
 
