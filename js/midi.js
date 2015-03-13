@@ -13,11 +13,12 @@ function midiMessageReceived( ev ) {
     } else if (cmd == 9) {
       // note on
       console.log("Note on - channel: " + channel + " note: " + noteNumber + " velocity: " + velocity );
-      if (channel == 9)
+      if ((channel == 9)||(channel==1))
         playDrum(noteNumber, velocity);
       else
         noteOn( noteNumber, velocity);
     } else if (cmd == 11) {
+      console.log("controller: channel: " + channel + " controller: " + noteNumber + " value: " + velocity );
       controller( noteNumber, velocity);
     } else if ((ev.data.length == 6) &&
       (ev.data[0] == 0xf0) &&
@@ -138,8 +139,10 @@ function onMIDIInit( midi ) {
         midiIn.onmidimessage = midiMessageReceived;
       }
     }
-    if (!midiIn)
+    if (!midiIn) {
       midiIn = midiAccess.inputs.values().next().value;
+      midiIn.onmidimessage = midiMessageReceived;
+    }
 
     var outputs=midiAccess.outputs.values();
     for ( var output = outputs.next(); output && !output.done; output = outputs.next()) {
@@ -353,6 +356,7 @@ var filterEngaged = false;
 
 function controller(number, data) {
   switch (number) {
+    case 1:
     case 4:  // Tempo
       theBeat.tempo = kMinTempo + data;
       document.getElementById('tempo').innerHTML = theBeat.tempo;
@@ -386,6 +390,7 @@ function controller(number, data) {
       updateControls();
       return;
 
+    case 2:
     case 48:  // Filter cutoff
       if ( !filterEngaged && data<127)
         return;
@@ -396,6 +401,7 @@ function controller(number, data) {
         midiOut.send( [11<<4, 48, data] );
       return;
 
+    case 3:
     case 51:  // Filter Q
       setFilterQ( data * 20.0/127.0 );
       // echo back out - this lights up the control
