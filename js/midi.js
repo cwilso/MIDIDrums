@@ -112,7 +112,8 @@ function onMIDIInit( midi ) {
     }
     if (!midiIn)
       midiIn = list[0];
-    midiIn.onmidimessage = midiMessageReceived;
+    if (midiIn)
+      midiIn.onmidimessage = midiMessageReceived;
 
     list=midiAccess.outputs();
 
@@ -141,7 +142,8 @@ function onMIDIInit( midi ) {
     }
     if (!midiIn) {
       midiIn = midiAccess.inputs.values().next().value;
-      midiIn.onmidimessage = midiMessageReceived;
+      if (midiIn)
+        midiIn.onmidimessage = midiMessageReceived;
     }
 
     var outputs=midiAccess.outputs.values();
