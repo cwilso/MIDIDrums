@@ -928,8 +928,11 @@ function setEffect(index) {
 
     theBeat.effectIndex = index;
     effectDryMix = impulseResponseInfoList[index].dryMix;
-    effectWetMix = impulseResponseInfoList[index].wetMix;            
-    convolver.buffer = impulseResponseList[index].buffer;
+    effectWetMix = impulseResponseInfoList[index].wetMix;
+
+   if(impulseResponseList[index].buffer instanceof AudioBuffer)
+            convolver.buffer = impulseResponseList[index].buffer;
+
 
   // Hack - if the effect is meant to be entirely wet (not unprocessed signal)
   // then put the effect level all the way up.
